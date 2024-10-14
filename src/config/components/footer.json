@@ -1,0 +1,18 @@
+{
+  "site_name": "AstroWP Blog",
+  "legal": "All rights reserved.",
+  "made_by": {
+    "name": "AstroWP",
+    "href": "/",
+    "links": [
+      {
+        "name": "Privacy Policy",
+        "href": "/privacy-policy/"
+      },
+      {
+        "name": "Terms & Conditions",
+        "href": "/terms-conditions/"
+      }
+    ]
+  }
+}

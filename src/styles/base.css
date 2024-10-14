@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+:root {
+  --font-primary: 'Inter', sans-serif;
+  --color-primary: #3b82f6;
+  --color-secondary: #10b981;
+}
+
+body {
+  font-family: var(--font-primary);
+  @apply bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-200;
+}
+
+/* Improved typography */
+h1, h2, h3, h4, h5, h6 {
+  @apply font-bold tracking-tight;
+}
+
+h1 { @apply text-4xl md:text-5xl lg:text-6xl; }
+h2 { @apply text-3xl md:text-4xl lg:text-5xl; }
+h3 { @apply text-2xl md:text-3xl lg:text-4xl; }
+h4 { @apply text-xl md:text-2xl lg:text-3xl; }
+h5 { @apply text-lg md:text-xl lg:text-2xl; }
+h6 { @apply text-base md:text-lg lg:text-xl; }
+
+/* Improved link styles */
+a {
+  @apply text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 transition-colors duration-200;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-lg;
+}
+
+/* Button styles */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors duration-200;
+}
+
+/* Improved container for better responsiveness */
+.container {
+  @apply px-4 sm:px-6 lg:px-8 mx-auto max-w-7xl;
+}
+
+/* Apply theme.json config file accent colour to links */
+p a[href] {
+  color: var(--color-primary) !important;
+}
+
+p a[href]:hover {
+  color: var(--color-primary) !important;
+  filter: brightness(110%);
+}
+
+/* Set content-visibility to auto for images */
+img {
+  content-visibility: auto;
+}
+
+/* Remove arrows from list-style - this is a fix for tailwindcss */
+details > summary.list-none::-webkit-details-marker,
+details > summary.list-none::marker {
+  display: none;
+}
+
+/* Dark mode color adjustments */
+.prose {
+  --tw-prose-body: #374151;
+  --tw-prose-headings: #111827;
+  --tw-prose-lead: #4b5563;
+  --tw-prose-links: #3b82f6;
+  --tw-prose-bold: #111827;
+  --tw-prose-counters: #6b7280;
+  --tw-prose-bullets: #d1d5db;
+  --tw-prose-hr: #e5e7eb;
+  --tw-prose-quotes: #111827;
+  --tw-prose-quote-borders: #e5e7eb;
+  --tw-prose-captions: #6b7280;
+  --tw-prose-code: #111827;
+  --tw-prose-pre-code: #e5e7eb;
+  --tw-prose-pre-bg: #1f2937;
+  --tw-prose-th-borders: #d1d5db;
+  --tw-prose-td-borders: #e5e7eb;
+}
+
+.dark .prose {
+  --tw-prose-body: #d1d5db;
+  --tw-prose-headings: #fff;
+  --tw-prose-lead: #9ca3af;
+  --tw-prose-links: #60a5fa;
+  --tw-prose-bold: #fff;
+  --tw-prose-counters: #9ca3af;
+  --tw-prose-bullets: #4b5563;
+  --tw-prose-hr: #374151;
+  --tw-prose-quotes: #f3f4f6;
+  --tw-prose-quote-borders: #374151;
+  --tw-prose-captions: #9ca3af;
+  --tw-prose-code: #fff;
+  --tw-prose-pre-code: #d1d5db;
+  --tw-prose-pre-bg: rgb(0 0 0 / 50%);
+  --tw-prose-th-borders: #4b5563;
+  --tw-prose-td-borders: #374151;
+}
+
+.prose :where(blockquote p:first-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):before {
+  content: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .container {
+    @apply px-4;
+  }
+}
+
+/* Improved blog post width adjustment */
+.\!max-w-7xl {
+  max-width: 80rem !important;
+}
+
+/* Add support for WP Blocks query and columns */
+/* ... (keep the existing WP Blocks styles) ... */

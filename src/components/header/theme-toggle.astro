@@ -1,0 +1,14 @@
+---
+import { Icon } from "astro-icon/components";
+---
+
+<div class="theme-toggle flex items-center rounded-lg p-1">
+  <button type="button" aria-label="toggle light theme" class="relative">
+    <span class="sr-only">toggle light theme</span>
+    <Icon name="lucide:sun-medium" class="size-5 text-black dark:hidden" />
+  </button>
+  <button type="button" aria-label="toggle dark theme" class="relative">
+    <span class="sr-only">toggle dark theme</span>
+    <Icon name="lucide:moon" class="hidden size-5 text-white dark:block" />
+  </button>
+</div>

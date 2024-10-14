@@ -1,0 +1,447 @@
+---
+import { Image, Picture } from "astro:assets";
+import { JSDOM } from "jsdom";
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
+import Authorcard from "@components/authorcard.astro";
+import Container from "@components/container.astro";
+import Label from "@components/ui/label.astro";
+import Layout from "@layouts/Layout.astro";
+import PostContent from "@components/postcontent.astro";
+import SocialShare from "@components/socialshare.astro";
+import config from "@config/config.json";
+import theme from "@config/theme.json";
+
+export async function getStaticPaths() {
+  const response = await fetch(`${config.API_URL}/graphql`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `
+        query GetPosts {
+          posts(first: 100) {
+            nodes {
+              databaseId
+              slug
+              title
+              date
+              content(format: RENDERED)
+              featuredImage {
+                node {
+                  mediaItemUrl
+                  altText
+                }
+              }
+              author {
+                node {
+                  name
+                  slug
+                  description
+                  avatar {
+                    foundAvatar
+                    url
+                  }
+                }
+              }
+              categories {
+                edges {
+                    isPrimary
+                    node {
+                        name
+                        slug
+                        databaseId
+                    }
+                }
+              }
+              tags {
+                nodes {
+                  name
+                  slug
+                }
+              }
+              seo {
+                canonical
+                title
+                metaDesc
+                metaRobotsNoindex
+                metaRobotsNofollow
+                opengraphAuthor
+                opengraphTitle
+                opengraphDescription
+                opengraphUrl
+                opengraphSiteName
+                twitterTitle
+                twitterDescription
+                schema {
+                  raw
+                }
+                opengraphImage {
+                  link
+                }
+              }
+            }
+          }
+          seo {
+            openGraph {
+              frontPage {
+                title
+              }
+            }
+            schema {
+              siteUrl
+            }
+          }
+          categories {
+            nodes {
+              name
+              slug
+              count
+            }
+          }
+        }
+      `,
+    }),
+  });
+  const { data } = await response.json();
+
+  return data.posts.nodes.map((post) => ({
+    params: { postslug: post.slug },
+    props: { post: post, categories: data.categories },
+  }));
+}
+
+const { post, categories } = Astro.props;
+
+const allCategories = categories.nodes.filter((category) => category.count > 0);
+
+// Get all authors from Co-Authors Plus
+let response = await fetch(
+  `${config.API_URL}/wp-json/coauthors/v1/coauthors?post_id=${post.databaseId}`,
+);
+const authors = await response.json();
+
+const category =
+  post.categories.edges.find((category) => category.isPrimary) ??
+  post.categories.edges[0];
+
+response = await fetch(`${config.API_URL}/graphql`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: `
+        query GetRelatedPosts {
+          category(idType: DATABASE_ID, id: ${category.node.databaseId}) {
+            posts(where: {notIn: ${post.databaseId}}) {
+              edges {
+                node {
+                  title
+                  slug
+                  date
+                  featuredImage {
+                    node {
+                      mediaItemUrl
+                      altText
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
+  }),
+});
+
+const { data: relatedPosts } = await response.json();
+
+// Fetch inline CSS
+let inlineCss = [];
+
+async function fetchAndExtractStyles(url) {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const htmlText = await response.text();
+
+    const dom = new JSDOM(htmlText);
+    const doc = dom.window.document;
+
+    const styleTags = doc.querySelectorAll("style");
+
+    for await (const styleTag of styleTags) {
+      const newStyleTag =
+        ".entry-content " + styleTag.textContent.replaceAll("!important;", "");
+      inlineCss.push(newStyleTag);
+    }
+  } catch (error) {
+    console.error("Error fetching and extracting style tags", error);
+  }
+}
+
+await fetchAndExtractStyles(`${config.API_URL}/${post.slug}/`);
+---
+
+<Layout>
+  <Fragment slot="head">
+    <SEO
+      title={post.seo.title}
+      description={post.seo.metaDesc}
+      canonical={Astro.url}
+      openGraph={{
+        basic: {
+          url: post.seo.canonical,
+          type: "website",
+          title: post.seo.opengraphTitle,
+          image: post?.seo?.opengraphImage?.link ?? "",
+        },
+        image: { alt: post.seo.opengraphTitle },
+      }}
+      extend={{
+        meta: [
+          {
+            name: "og:description",
+            content: post.seo.opengraphDescription,
+          },
+          { name: "twitter:title", content: post.seo.twitterTitle },
+          { name: "twitter:description", content: post.seo.twitterDescription },
+        ],
+      }}
+      noindex={post.seo.metaRobotsNoindex === "noindex"}
+      nofollow={post.seo.metaRobotsNofollow === "nofollow"}
+    />
+    <Schema item={JSON.parse(post.seo.schema.raw)} />
+  </Fragment>
+
+  <Container>
+    <div class="mx-auto max-w-screen-md">
+        <div class="text-center">
+            <a href={`/category/${category.node.slug}/`}>
+                <Label>{category.node.name}</Label>
+            </a>
+        </div>
+
+        <h1 class="text-brand-primary mb-3 mt-2 text-center text-3xl font-semibold tracking-tight lg:text-4xl lg:leading-snug dark:text-white">
+            <Fragment set:html={post.title} />
+        </h1>
+
+        <div class="flex flex-wrap items-center justify-center gap-3">
+            {authors.map((author) => (
+                <div class="flex items-center gap-3">
+                    <Image
+                        src={
+                            author.avatar_urls
+                                ? author.avatar_urls["48"]
+                                : import(`../assets/authors/placeholder.jpg`)
+                        }
+                        alt={author.display_name}
+                        width={40}
+                        height={40}
+                        loading="eager"
+                        class="rounded-full"
+                    />
+                    <a
+                        href={`/author/${author.user_nicename}/`}
+                        class="author text-sm text-gray-600 dark:text-white"
+                    >
+                        {author.display_name}
+                    </a>
+                </div>
+            ))}
+            <span class="text-xs text-gray-500 dark:text-gray-400"> &bull;</span>
+            <time class="text-sm text-gray-600 dark:text-white" datetime={post.date}>
+                {new Date(post.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                })}
+            </time>
+        </div>
+    </div>
+</Container>
+
+  <div
+    class="relative z-0 mx-auto aspect-video max-w-screen-lg overflow-hidden lg:rounded-lg"
+  >
+    {
+      post.featuredImage && (
+        <Picture
+          formats={["avif", "webp"]}
+          src={post.featuredImage.node.mediaItemUrl}
+          alt={post.title}
+          width={1024}
+          height={576}
+          loading="eager"
+          class="w-full rounded-lg"
+        />
+      )
+    }
+  </div>
+
+  <Container class="!max-w-7xl">
+    <div
+      class="flex flex-col justify-between gap-10 lg:flex-row lg:items-start"
+    >
+      <div class={`${!theme.features.enableSidebar && "mx-auto"}`}>
+        <article
+          class="prose prose-base my-3 max-w-4xl dark:prose-invert prose-a:text-blue-600"
+        >
+          <PostContent content={post.content} />
+        </article>
+
+        <Container>
+          <article class="">
+            <div
+              class="flex flex-col items-center justify-between gap-3 sm:flex-row"
+            >
+              <div
+                class="prose prose-base my-3 dark:prose-invert prose-a:text-blue-600"
+              >
+                <div
+                  class="mb-3 flex w-full flex-wrap items-center justify-center gap-3 sm:justify-normal md:w-auto"
+                >
+                  {
+                    post.categories.edges.map((category) => (
+                      <a href={`/category/${category.node.slug}/`}>
+                        <Label>{category.node.name}</Label>
+                      </a>
+                    ))
+                  }
+                </div>
+
+                <div
+                  class="flex w-full flex-wrap items-center justify-center gap-3 sm:justify-normal md:w-auto"
+                >
+                  {
+                    post.tags.nodes.map((tag) => (
+                      <a
+                        href={`/tag/${tag.slug}/`}
+                        class="text-sm text-gray-500"
+                      >
+                        #{tag.name}
+                      </a>
+                    ))
+                  }
+                </div>
+              </div>
+
+              <SocialShare
+                url={encodeURIComponent(Astro.url.toString())}
+                title={encodeURIComponent(post.title)}
+              />
+            </div>
+
+            <div class="mb-7 mt-7 flex justify-center">
+              <a
+                href="/"
+                class="relative inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 pl-4 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-20 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-500 dark:bg-white dark:text-gray-500"
+              >
+                ← View all posts
+              </a>
+            </div>
+            {authors.map((author) => <Authorcard author={author} />)}
+          </article>
+        </Container>
+      </div>
+
+      {
+        theme.features.enableSidebar && (
+          <nav class="sticky bottom-0 top-24 hidden max-h-screen max-w-xs overflow-y-auto xl:block">
+            <div class="flex flex-col gap-6">
+              <div>
+                <h3 class="text-2xl font-bold dark:text-white">Related</h3>
+
+                <div class="mt-3 grid gap-6">
+                  {relatedPosts.category.posts.edges.slice(0, 5).map((post) => (
+                    <a href={`/${post.node.slug}/`}>
+                      <div class="flex gap-5">
+                        <>
+                          <div class="relative h-20 w-24 shrink-0 overflow-hidden rounded-md">
+                            <Picture
+                              formats={["avif", "webp"]}
+                              src={
+                                post.node.featuredImage
+                                  ? post.node.featuredImage.node.mediaItemUrl
+                                  : import("../assets/placeholder.jpg")
+                              }
+                              alt={post.node.title}
+                              width={500}
+                              height={500}
+                              loading="eager"
+                              class="h-full w-full rounded-md object-cover"
+                            />
+                          </div>
+                          <div>
+                            <h3 class="line-clamp-2 font-medium dark:text-white">
+                              {post.node.title}
+                            </h3>
+                            <p class="mt-2 text-sm text-gray-600 dark:text-gray-200">
+                              <time datetime={post.node.date}>
+                                {new Date(post.node.date).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  },
+                                )}
+                              </time>
+                            </p>
+                          </div>
+                        </>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 class="text-2xl font-bold dark:text-white">Categories</h3>
+
+                <ul class="grid">
+                  {allCategories.map((category) => (
+                    <li>
+                      <a
+                        class="flex items-center justify-between py-2"
+                        href={`/category/${category.slug}/`}
+                      >
+                        <>
+                          <h4 class="!text-base text-gray-800 dark:text-gray-200">
+                            {category.name}
+                          </h4>
+                          <div class="inline-flex h-6 shrink-0 items-center justify-center rounded-full bg-blue-50 px-2 text-sm font-bold text-blue-500 dark:bg-gray-800 dark:text-gray-200">
+                            {category.count}
+                          </div>
+                        </>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </nav>
+        )
+      }
+    </div>
+  </Container>
+</Layout>
+
+<style is:inline set:html={inlineCss}></style>
+
+<style is:global>
+  body a {
+    text-decoration: none;
+  }
+
+  /*html.dark body {
+    background-color: black !important;
+    color: white !important;
+  }
+
+  html.dark body article > *,
+  html.dark body article a {
+    background-color: black !important;
+    color: white !important;
+  }*/
+</style>

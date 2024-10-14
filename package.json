@@ -1,0 +1,46 @@
+{
+  "name": "headlesswp-blog-theme",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/alpinejs": "^0.4.0",
+    "@astrojs/mdx": "^3.1.1",
+    "@astrojs/sitemap": "^3.1.6",
+    "@astrojs/tailwind": "^5.1.0",
+    "@fontsource/inter": "^4.5.14",
+    "@iconify-json/lucide": "^1.1.188",
+    "@iconify-json/tabler": "^1.1.113",
+    "@iconify-json/uil": "^1.1.8",
+    "@types/alpinejs": "^3.7.1",
+    "@wordpress/block-library": "^8.35.0",
+    "astro": "^4.11.0",
+    "astro-color-scheme": "^1.0.1",
+    "astro-feather-icons": "^1.0.2",
+    "astro-font": "^0.0.81",
+    "astro-icon": "^1.1.0",
+    "astro-seo": "^0.6.1",
+    "astro-seo-schema": "^4.0.2",
+    "jsdom": "^24.1.0",
+    "mdast-util-to-string": "^3.1.0",
+    "reading-time": "^1.5.0",
+    "tailwindcss": "^3.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/line-clamp": "^0.4.2",
+    "@tailwindcss/typography": "^0.5.9",
+    "classnames": "^2.3.2",
+    "prettier": "^3.2.5",
+    "prettier-plugin-astro": "^0.14.0",
+    "prettier-plugin-tailwindcss": "^0.5.14",
+    "sharp": "^0.32.6",
+    "vite": "^5.2.11"
+  }
+}

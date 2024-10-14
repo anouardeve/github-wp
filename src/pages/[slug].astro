@@ -1,0 +1,100 @@
+---
+import Layout from "@layouts/Layout.astro";
+import Container from "@components/container.astro";
+import { authors } from "@data/authors";
+import Pagetitle from "@components/pagetitle.astro";
+import Link from "@components/ui/link.astro";
+import config from "@config/config.json";
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
+
+export async function getStaticPaths() {
+  const response = await fetch(`${config.API_URL}/graphql`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `
+        query GetAllPages {
+          pages {
+            nodes {
+              content(format: RENDERED)
+              title
+              slug
+              seo {
+                canonical
+                title
+                metaDesc
+                metaRobotsNoindex
+                metaRobotsNofollow
+                opengraphAuthor
+                opengraphTitle
+                opengraphDescription
+                opengraphUrl
+                opengraphSiteName
+                twitterTitle
+                twitterDescription
+                schema {
+                  raw
+                }
+                opengraphImage {
+                  link
+                }
+              }
+            }
+          }
+        }
+      `,
+    }),
+  });
+  const { data } = await response.json();
+
+  return data.pages.nodes.map((page) => ({
+    params: { slug: page.slug },
+    props: { page: page },
+  }));
+}
+
+const { page } = Astro.props;
+---
+
+<Layout title={page.seo.title}>
+  <Fragment slot="head">
+    <SEO
+      title={page.seo.title}
+      description={page.seo.metaDesc}
+      canonical={Astro.url}
+      openGraph={{
+        basic: {
+          url: page.seo.canonical,
+          type: "website",
+          title: page.seo.opengraphTitle,
+          image: page?.seo?.opengraphImage?.link ?? "",
+        },
+      }}
+      extend={{
+        meta: [
+          {
+            name: "og:description",
+            content: page.seo.opengraphDescription,
+          },
+          { name: "twitter:title", content: page.seo.twitterTitle },
+          { name: "twitter:description", content: page.seo.twitterDescription },
+        ],
+      }}
+      noindex={page.seo.metaRobotsNoindex === "noindex"}
+      nofollow={page.seo.metaRobotsNofollow === "nofollow"}
+    />
+    <Schema item={JSON.parse(page.seo.schema.raw)} />
+  </Fragment>
+
+  <Container>
+    <Pagetitle>
+      <Fragment slot="title">{page.title}</Fragment>
+      <Fragment slot="desc"></Fragment>
+    </Pagetitle>
+
+    <div class="prose mx-auto mt-10 dark:prose-invert">
+      <Fragment set:html={page.content} />
+    </div>
+  </Container>
+</Layout>

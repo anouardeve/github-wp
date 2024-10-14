@@ -1,0 +1,53 @@
+---
+import { Icon } from "astro-icon/components";
+
+export interface Props {
+  url: string | URL;
+  title: string;
+}
+
+const { url, title } = Astro.props;
+---
+
+<div class="flex items-center gap-1">
+  <span class="mr-2 text-gray-400 hover:text-black dark:text-white dark:hover:text-slate-200">Share:</span>
+  <a
+    href={`https://twitter.com/intent/tweet?url=${url}&text=${title}`}
+    target="_blank"
+    aria-label="Share on Twitter / X"
+    ><Icon
+      name="tabler:brand-x"
+      class="h-6 w-6 text-gray-400 hover:text-black dark:text-slate-300 dark:hover:text-slate-200"
+    />
+  </a>
+  <a
+    href={`https://www.facebook.com/sharer.php?u=${url}`}
+    target="_blank"
+    aria-label="Share on Facebook"
+    class="ml-2 rtl:ml-0 rtl:mr-2"
+    ><Icon
+      name="tabler:brand-facebook"
+      class="h-6 w-6 text-gray-400 hover:text-black dark:text-slate-300 dark:hover:text-slate-200"
+    />
+  </a>
+  <a
+    href={`https://www.linkedin.com/sharing/share-offsite/?url=${url}`}
+    target="_blank"
+    aria-label="Share on LinkedIn"
+    class="ml-2 rtl:ml-0 rtl:mr-2"
+    ><Icon
+      name="tabler:brand-linkedin"
+      class="h-6 w-6 text-gray-400 hover:text-black dark:text-slate-300 dark:hover:text-slate-200"
+    />
+  </a>
+  <a
+    href={`https://pinterest.com/pin/create/button/?url=${url}`}
+    target="_blank"
+    aria-label="Share on Pinterest"
+    class="ml-2 rtl:ml-0 rtl:mr-2"
+    ><Icon
+      name="tabler:brand-pinterest"
+      class="h-6 w-6 text-gray-400 hover:text-black dark:text-slate-300 dark:hover:text-slate-200"
+    />
+  </a>
+</div>

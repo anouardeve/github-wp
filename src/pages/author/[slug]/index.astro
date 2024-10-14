@@ -1,0 +1,208 @@
+---
+import { Image } from "astro:assets";
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
+import Container from "@components/container.astro";
+import Postlist from "@components/postlist.astro";
+import Pagination from "@components/pagination.astro";
+import Layout from "@layouts/Layout.astro";
+import config from "@config/config.json";
+import { getAllAuthors } from "@utils/get-all-authors";
+
+export async function getStaticPaths() {
+  // Get all co-authors
+  try {
+    const response = await fetch(
+      `${config.API_URL}/wp-json/coauthors/v1/search`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization:
+            "Basic " +
+            Buffer.from(
+              `${import.meta.env.WP_USERNAME}:${import.meta.env.WP_APPLICATION_PASSWORD}`,
+            ).toString("base64"),
+        },
+      },
+    );
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      console.error("Received data is not an array:", data);
+      return [];
+    }
+
+    return data.map((author) => ({
+      params: { slug: author.userNicename },
+      props: { author: author },
+    }));
+  } catch (error) {
+    console.error("Error fetching co-authors:", error);
+    return [];
+  }
+}
+
+const { slug } = Astro.params;
+const { author } = Astro.props;
+
+// Get posts by author
+const response = await fetch(`${config.API_URL}/graphql`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: `
+        query GetPostsByAuthor {
+          posts(where: {authorName: "${slug}"}) {
+            nodes {
+              slug
+              title
+              date
+              featuredImage {
+                node {
+                  mediaItemUrl
+                  altText
+                }
+              }
+              author {
+                node {
+                  name
+                  slug
+                  avatar {
+                    foundAvatar
+                    url
+                  }
+                  description
+                  seo {
+                    canonical
+                    title
+                    metaDesc
+                    metaRobotsNoindex
+                    metaRobotsNofollow
+                    opengraphDescription
+                    opengraphTitle
+                    opengraphDescription
+                    twitterTitle
+                    twitterDescription
+                    opengraphImage {
+                      mediaItemUrl
+                    }
+                    schema {
+                      raw
+                    }
+                  }
+                }
+              }
+              categories {
+                edges {
+                    isPrimary
+                    node {
+                        name
+                        slug
+                    }
+                }
+              }
+            }
+          }
+        }
+      `,
+  }),
+});
+const { data } = await response.json();
+
+const posts = data.posts.nodes;
+
+// Build a list of all authors
+const authors = await getAllAuthors(posts);
+
+// Strip HTML from meta desc
+function stripHtmlTags(html) {
+  return html.replace(/<[^>]*>/g, '');
+}
+
+const description = Object.values(authors).find(
+  authorList => authorList.user_nicename === author.userNicename
+)?.description?.rendered || '';
+
+const strippedDescription = stripHtmlTags(description);
+
+---
+
+<Layout>
+  <Fragment slot="head">
+    <SEO
+      title={author.displayName}
+      description={strippedDescription}
+      canonical={Astro.url}
+      openGraph={{
+        basic: {
+          url: Astro.url,
+          type: "article:author",
+          title: author.displayName,
+          image: posts[0]?.author?.node?.seo?.opengraphImage?.link ?? "",
+        },
+        image: { alt: author.displayName },
+      }}
+      extend={{
+        meta: [
+          {
+            name: "og:description",
+            content: strippedDescription,
+          },
+          {
+            name: "twitter:title",
+            content: author.displayName,
+          },
+          {
+            name: "twitter:description",
+            content: strippedDescription,
+          },
+        ],
+      }}
+      noindex={posts[0]?.author?.node?.seo?.metaRobotsNoindex === "noindex"}
+      nofollow={posts[0]?.author?.node?.seo?.metaRobotsNofollow === "nofollow"}
+    />
+
+    <Schema item={JSON.parse(posts[0]?.author?.node?.seo?.schema?.raw || '{}')} />
+  </Fragment>
+
+  <Container>
+    <main>
+      <div class="flex flex-col items-center justify-center">
+        <Image
+          src={author.avatar}
+          alt={author.displayName}
+          width={80}
+          height={80}
+          loading="eager"
+          class="rounded-full"
+        />
+
+        <h1
+          class="text-brand-primary mt-2 text-3xl font-semibold tracking-tight lg:text-3xl lg:leading-tight dark:text-white"
+        >
+          {author.displayName}
+        </h1><div
+          class="mx-auto mt-2 flex max-w-xl flex-col px-5 text-center text-gray-500"
+        >
+          <Fragment
+            set:html={Object.values(authors).find(
+              (authorList) => authorList.user_nicename === author.userNicename,
+            )?.description?.rendered || ''}
+          />
+        </div>
+      </div>
+
+      <div class="mt-20 grid gap-10 md:grid-cols-2 lg:gap-10 xl:grid-cols-3">
+        {
+          posts
+            .slice(0, 6)
+            .map((post) => <Postlist post={post} authors={authors} />)
+        }
+      </div>
+
+      <Pagination url={posts.length > 6 && { next: `/author/${slug}/2/` }} />
+    </main>
+  </Container>
+</Layout>

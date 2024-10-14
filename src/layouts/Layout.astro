@@ -1,0 +1,74 @@
+---
+import "../styles/base.css";
+import "@wordpress/block-library/build-style/common.css";
+import "@wordpress/block-library/build-style/style.css";
+import "@wordpress/block-library/build-style/theme.css";
+import Footer from "@components/footer.astro";
+import Navbar from "@components/header/navbar.astro";
+import Scripts from "@config/scripts.astro";
+import { SEO } from "astro-seo";
+import { AstroFont } from "astro-font";
+import theme from "@config/theme.json";
+
+const fontFamily = theme.fonts.fontFamily
+  .replace(/\+/g, " ")
+  .replace(/:[ital,]*[ital@]*[wght@]*[0-9,;.]+/gi, "");
+
+export interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+
+const { title, description, noindex } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="generator" content={Astro.generator} />
+
+    <slot name="head" />
+
+    {
+      !Astro.slots.has("head") && (
+        <SEO
+          title={`${title}`}
+          description={description}
+          canonical={Astro.url}
+          noindex={noindex}
+        />
+      )
+    }
+
+    <AstroFont
+      config={[
+        {
+          src: [],
+          preload: false,
+          display: "swap",
+          name: fontFamily!,
+          fallback: "sans-serif",
+          cssVariable: "font-primary",
+          googleFontsURL: `https://fonts.googleapis.com/css2?family=${theme.fonts.fontFamily}&display=swap`,
+        },
+      ]}
+    />
+
+    <Scripts />
+  </head>
+  <body>
+    <Navbar />
+    <slot />
+    <Footer />
+    <style is:global>
+      img {
+        content-visibility: auto;
+      }
+    </style>
+  </body>
+</html>

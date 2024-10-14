@@ -1,0 +1,163 @@
+---
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
+import Container from "@components/container.astro";
+import Postlist from "@components/postlist.astro";
+import Pagination from "@components/pagination.astro";
+import Layout from "@layouts/Layout.astro";
+import config from "@config/config.json";
+import { getAllAuthors } from "@utils/get-all-authors";
+
+export async function getStaticPaths() {
+  const response = await fetch(`${config.API_URL}/graphql`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `
+        query GetAllTags {
+          tags {
+            nodes {
+              name
+              slug
+              seo {
+                canonical
+                title
+                metaDesc
+                metaRobotsNoindex
+                metaRobotsNofollow
+                opengraphTitle
+                opengraphDescription
+                twitterTitle
+                twitterDescription
+                opengraphImage {
+                  mediaItemUrl
+                }
+                schema {
+                  raw
+                }
+              }
+            }
+          }
+        }
+      `,
+    }),
+  });
+  const { data } = await response.json();
+
+  return data.tags.nodes.map((tag) => ({
+    params: { slug: tag.slug },
+    props: { tag: tag },
+  }));
+}
+
+const { slug } = Astro.params;
+const { tag } = Astro.props;
+
+// Get posts by tag
+const response = await fetch(`${config.API_URL}/graphql`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: `
+        query GetPostsByTag {
+          posts(where: {tag: "${tag.slug}"}) {
+            nodes {
+              slug
+              title
+              date
+              featuredImage {
+                node {
+                  mediaItemUrl
+                  altText
+                }
+              }
+              author {
+                node {
+                  name
+                  slug
+                  avatar {
+                    foundAvatar
+                    url
+                  }
+                }
+              }
+              categories {
+                edges {
+                    isPrimary
+                    node {
+                        name
+                        slug
+                    }
+                }
+              }
+            }
+          }
+        }
+      `,
+  }),
+});
+const { data } = await response.json();
+
+const posts = data.posts.nodes;
+
+// Build a list of all authors
+const authors = await getAllAuthors(posts);
+---
+
+<Layout>
+  <Fragment slot="head">
+    <SEO
+      title={tag.seo.title}
+      description={tag.seo.metaDesc}
+      canonical={Astro.url}
+      openGraph={{
+        basic: {
+          url: tag.seo.canonical,
+          type: "article:tag",
+          title: tag.seo.opengraphTitle,
+          image: tag?.seo?.opengraphImage?.link ?? "",
+        },
+        image: { alt: tag.seo.opengraphTitle },
+      }}
+      extend={{
+        meta: [
+          {
+            name: "og:description",
+            content: tag.seo.opengraphDescription,
+          },
+          { name: "twitter:title", content: tag.seo.twitterTitle },
+          {
+            name: "twitter:description",
+            content: tag.seo.twitterDescription,
+          },
+        ],
+      }}
+      noindex={tag.seo.metaRobotsNoindex === "noindex"}
+      nofollow={tag.seo.metaRobotsNofollow === "nofollow"}
+    />
+
+    <Schema item={JSON.parse(tag.seo.schema.raw)} />
+  </Fragment>
+
+  <Container>
+    <main>
+      <div class="flex flex-col items-center justify-center">
+        <h1
+          class="text-brand-primary text-3xl font-semibold tracking-tight lg:text-5xl lg:leading-tight dark:text-white"
+        >
+          {tag.name}
+        </h1><p class="mt-1 text-gray-600">{posts.length} Articles</p>
+      </div>
+
+      <div class="mt-20 grid gap-10 md:grid-cols-2 lg:gap-10 xl:grid-cols-3">
+        {
+          posts
+            .slice(0, 6)
+            .map((post) => <Postlist post={post} authors={authors} />)
+        }
+      </div>
+
+      <Pagination url={posts.length > 6 && { next: `/tag/${tag.slug}/2/` }} />
+    </main>
+  </Container>
+</Layout>

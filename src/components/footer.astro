@@ -1,0 +1,40 @@
+---
+import Container from "./container.astro";
+import Themeswitch from "./themeswitch.astro";
+import footer from "@config/components/footer.json";
+---
+
+<Container class="mt-10 border-t border-gray-100 dark:border-gray-800">
+  <footer class="flex flex-col items-center">
+    <div class="text-center text-sm">
+      Copyright © {new Date().getFullYear()}
+      {footer.site_name}. {footer.legal}
+    </div>
+    <div
+      class="mt-1 flex justify-center gap-1 text-center text-sm text-gray-600 dark:text-white"
+    >
+      <span>
+        Made by{" "}
+        <a href={footer.made_by.href}>
+          {footer.made_by.name}
+        </a>
+      </span>
+
+      {
+        footer.made_by.links.map((link) => (
+          <>
+            <span>&middot;</span>
+            <span>
+              <a href={link.href}>
+                {link.name}
+              </a>
+            </span>
+          </>
+        ))
+      }
+    </div>
+    <div class="mt-2 hidden items-center justify-between">
+      <Themeswitch />
+    </div>
+  </footer>
+</Container>

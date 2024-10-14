@@ -1,0 +1,28 @@
+{
+  "API_URL": "https://aste.instawp.xyz",
+  "site": {
+    "url": "https://www.aste.me"
+  },
+  "pages": {
+    "leftmenu": [
+      {
+        "title": "Projects",
+        "slug": "/projects/"
+      },
+      {
+        "title": "About",
+        "slug": "/about/"
+      }
+    ],
+    "rightmenu": [
+      {
+        "title": "Archive",
+        "slug": "/Archive/"
+      },
+      {
+        "title": "Contact",
+        "slug": "/contact/"
+      }
+    ]
+  }
+}

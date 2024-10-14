@@ -1,0 +1,79 @@
+---
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
+import Container from "@components/container.astro";
+import Postlist from "@components/postlist.astro";
+import Pagination from "@components/pagination.astro";
+import Layout from "@layouts/Layout.astro";
+import config from "@config/config.json";
+import { getAllAuthors } from "@utils/get-all-authors";
+
+// ... (keep the existing GraphQL query and data fetching)
+
+const posts = data.posts.nodes
+  .sort((a, b) => (a.isSticky === true ? -1 : b.isSticky === true ? 1 : 0))
+  .sort(
+    (a, b) => a.isSticky && b.isSticky && new Date(b.date) - new Date(a.date),
+  );
+
+const authors = await getAllAuthors(posts);
+
+// ... (keep the existing site data fetching)
+---
+
+<Layout>
+  <Fragment slot="head">
+    <SEO
+      title={`${siteData.seo.meta.homepage.title}`}
+      description={siteData.seo.meta.homepage.description}
+      canonical={Astro.url}
+      openGraph={{
+        basic: {
+          url: Astro.url,
+          type: "website",
+          title: siteData.seo.meta.homepage.title,
+          image: posts[0]?.author?.node?.seo?.opengraphImage?.link ?? "",
+        },
+      }}
+      extend={{
+        meta: [
+          {
+            name: "og:description",
+            content: siteData.seo.meta.homepage.description,
+          },
+          {
+            name: "twitter:title",
+            content: siteData.seo.meta.homepage.title,
+          },
+          {
+            name: "twitter:description",
+            content: siteData.seo.meta.homepage.description,
+          },
+        ],
+      }}
+    />
+  </Fragment>
+
+  <Container>
+    <main class="py-12 sm:py-16 lg:py-20">
+      <h1 class="mb-8 text-center text-4xl font-bold text-gray-900 dark:text-white sm:text-5xl lg:text-6xl">
+        Latest Articles
+      </h1>
+      <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+        {posts.slice(0, 6).map((post) => (
+          <Postlist post={post} authors={authors} aspect="landscape" />
+        ))}
+      </div>
+      {posts.length > 6 && (
+        <div class="mt-12 flex justify-center">
+          <a
+            href="/archive/"
+            class="btn bg-primary-600 hover:bg-primary-700 focus:ring-primary-500"
+          >
+            View All Posts
+          </a>
+        </div>
+      )}
+    </main>
+  </Container>
+</Layout>

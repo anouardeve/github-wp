@@ -1,0 +1,86 @@
+---
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
+import Container from "@components/container.astro";
+import Pagetitle from "@components/pagetitle.astro";
+import Postlist from "@components/postlist.astro";
+import Pagination from "@components/pagination.astro";
+import Layout from "@layouts/Layout.astro";
+import { getAllAuthors } from "@utils/get-all-authors";
+import config from "@config/config.json";
+import archive from "@config/pages/archive.json";
+
+let response = await fetch(`${config.API_URL}/graphql`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: `
+        query GetPosts {
+          posts(first: 100) {
+            nodes {
+              slug
+              title
+              excerpt
+              date
+              featuredImage {
+                node {
+                  mediaItemUrl
+                }
+              }
+              author {
+                node {
+                  name
+                  slug
+                  avatar {
+                    foundAvatar
+                    url
+                  }
+                }
+              }
+              categories {
+                edges {
+                    isPrimary
+                    node {
+                        name
+                        slug
+                    }
+                }
+              }
+            }
+          }
+        }
+      `,
+  }),
+});
+const { data } = await response.json();
+
+const posts = data.posts.nodes;
+
+// Build a list of all authors
+const authors = await getAllAuthors(posts);
+---
+
+<Layout
+  title={archive.meta_title}
+  description={archive.meta_description}
+  noindex={archive.noindex}
+>
+  <Container>
+    <Pagetitle>
+      <Fragment slot="title">{archive.title}</Fragment>
+      <Fragment slot="desc">{archive.description}</Fragment>
+    </Pagetitle>
+
+    <main>
+      <div class="mt-10 grid gap-10 md:grid-cols-2 lg:gap-10 xl:grid-cols-3">
+        {
+          posts
+            .slice(0, 12)
+            .map((post) => <Postlist post={post} authors={authors} />)
+        }
+      </div>
+
+      <Pagination url={posts.length > 12 && { next: `/archive/2/` }} />
+    </main>
+  </Container>
+</Layout>

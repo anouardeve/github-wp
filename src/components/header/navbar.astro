@@ -1,0 +1,92 @@
+---
+import Container from "../container.astro";
+import logoImage from "../../assets/logo.svg";
+import darkLogo from "../../assets/logo-dark.svg";
+import { Image } from "astro:assets";
+import ThemeToggle from "./theme-toggle.astro";
+import config from "@config/config.json";
+import theme from "@config/theme.json";
+import footer from "@config/components/footer.json";
+
+const mobilemenu = [...config.pages.leftmenu, ...config.pages.rightmenu];
+---
+
+<header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md dark:bg-gray-900/80">
+  <Container>
+    <nav class="flex items-center justify-between py-3">
+      <div class="flex items-center gap-6">
+        <a href="/" class="flex items-center">
+          <Image src={logoImage} alt={footer.site_name} width={120} height={40} class="dark:hidden" />
+          <Image src={darkLogo} alt={footer.site_name} width={120} height={40} class="hidden dark:block" />
+        </a>
+        <div class="hidden md:flex md:items-center md:gap-6">
+          {config.pages.leftmenu.map((link) => (
+            <a
+              href={`${link.slug}`}
+              class="text-sm font-medium text-gray-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400"
+            >
+              {link.title}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-6">
+        <div class="hidden md:flex md:items-center md:gap-6">
+          {config.pages.rightmenu.map((link) => (
+            <a
+              href={`${link.slug}`}
+              class="text-sm font-medium text-gray-600 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400"
+            >
+              {link.title}
+            </a>
+          ))}
+        </div>
+        <ThemeToggle />
+        <button
+          id="menu"
+          aria-label="Toggle Menu"
+          class="ml-auto rounded-md p-2 text-gray-500 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none dark:text-gray-300 dark:hover:bg-gray-800 dark:focus:bg-gray-800 md:hidden"
+        >
+          <svg
+            class="h-6 w-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            ></path>
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </Container>
+  <div id="mobile-menu" class="hidden">
+    <Container>
+      <div class="space-y-1 pb-3 pt-2">
+        {mobilemenu.map((link) => (
+          <a
+            href={`${link.slug}`}
+            class="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-100 hover:text-primary-600 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-primary-400"
+          >
+            {link.title}
+          </a>
+        ))}
+      </div>
+    </Container>
+  </div>
+</header>
+
+<script>
+  const menuButton = document.getElementById("menu");
+  const mobileMenu = document.getElementById("mobile-menu");
+
+  menuButton.addEventListener("click", () => {
+    mobileMenu.classList.toggle("hidden");
+  });
+</script>
